@@ -98,31 +98,55 @@ function livelyAudioListener(audioArray) {
   for (let i = 0; i <= config.FREQ_RANGE; i++) bass += audioArray[i] * 2;
 
   bass /= config.FREQ_RANGE * 2 * config.FREQ_MULTI;
-
-  multipleSplats(Math.floor(bass * config.SOUND_SENSITIVITY * 10) - lastBass);
-  lastBass = (bass, Math.floor(bass * config.SOUND_SENSITIVITY * 10));
+  let amount = Math.floor(bass * config.SOUND_SENSITIVITY * 10) - lastBass;
+  lastBass += amount;
+  if (amount <= 0) {
+    return
+  }
+  if (splatCircleEnabled && amount >= 4) {
+    config.SPLAT_RADIUS = 0.2;
+    splatCircle();
+    config.SPLAT_RADIUS = baseRadius;
+    return;
+  }
+  let multiplier = 1;
+  if (splatRadiusModulationEnabled) {
+    let volume = audioArray.reduce((a, b) => a + b);
+    if (volume >= 50) {
+      multiplier = 8;
+    }
+    else if (volume >= 40) {
+      multiplier = 3;
+    }
+    config.SPLAT_RADIUS = baseRadius * multiplier;
+  }
+  multipleSplats(amount);
+  config.SPLAT_RADIUS = baseRadius;
 }
-
-function multipleSplats(amount) {
+function splatCircle() {
+  const color = generateColor();
+  color.r *= 10.0;
+  color.g *= 10.0;
+  color.b *= 10.0;
+  const x = 0.5;
+  const y = 0.5;
+  const amount = 8;
   for (let i = 0; i < amount; i++) {
-    const color = config.COLORFUL ? generateColor() : Object.assign({}, config.POINTER_COLOR.getRandom());
-    color.r *= 10.0;
-    color.g *= 10.0;
-    color.b *= 10.0;
-    const x = canvas.width * Math.random();
-    const y = canvas.height * Math.random();
-    const dx = 1000 * (Math.random() - 0.5);
-    const dy = 1000 * (Math.random() - 0.5);
-    splat(x, y, dx, dy, color);
+    const dx = Math.cos(2 * Math.PI / amount * i);
+    const dy = Math.sin(2 * Math.PI / amount * i);
+    const speed = 2000;
+    splat(x + dx / 10 / 1.5, y + dy / 10, dx * speed, dy * speed, color);
   }
 }
 
 let _randomSplats = false;
 let _audioReact = false;
-let colorRange=["#FF0000","#FF0001"];
-let colorConfig=null;
-let splatRadiusModulationEnabled=false;
-let baseRadius=config.SPLAT_RADIUS;
+let colorRange = ["#FF0000", "#FF0001"];
+let colorConfig = null;
+let splatRadiusModulationEnabled = false;
+let splatCircleEnabled = false;
+let baseRadius = config.SPLAT_RADIUS;
+let splatVelocity = 1;
 function livelyPropertyListener(name, val) {
   switch (name) {
     case "quality":
@@ -146,7 +170,16 @@ function livelyPropertyListener(name, val) {
       config.CURL = val;
       break;
     case "splatRadius":
-      config.SPLAT_RADIUS = val / 100;
+      baseRadius = config.SPLAT_RADIUS = val / 100;
+      break;
+    case "splatRadiusModulationEnabled":
+      splatRadiusModulationEnabled = val;
+      break;
+    case "splatCircleEnabled":
+      splatCircleEnabled = val;
+      break;
+    case "splatVelocity":
+      splatVelocity = val / 10;
       break;
     case "shading":
       config.SHADING = val;
@@ -184,6 +217,12 @@ function livelyPropertyListener(name, val) {
     case "imgSelect":
       if (val != null) document.body.style.backgroundImage = `url('${val.replace("\\", "/")}')`;
       break;
+    case "imgOverlay":
+      if (val != null) document.querySelector("#overlay").style.backgroundImage = `url('${val.replace("\\", "/")}')`;
+      break;
+    case "removeOverlay":
+      document.querySelector("#overlay").style.backgroundImage = null;
+      break;
     case "randomSplats":
       _randomSplats = val;
       break;
@@ -191,14 +230,14 @@ function livelyPropertyListener(name, val) {
       _audioReact = val;
       break;
     case "colorLeft":
-        colorRange[0]=val;
-        break;
+      colorRange[0] = val;
+      break;
     case "colorRight":
-        colorRange[1]=val;
-        break;
+      colorRange[1] = val;
+      break;
     case "colorConfig2":
-        colorConfig=val===""? null:JSON.parse(val);
-        break;
+      colorConfig = val === "" ? null : JSON.parse(val);
+      break;
   }
 }
 
@@ -206,34 +245,34 @@ function hexToRgb(hex) {
   let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16),
+    }
     : null;
 }
 function RGBtoHSV(r, g, b) {
-    if (arguments.length === 1) {
-        g = r.g, b = r.b, r = r.r;
-    }
-    var max = Math.max(r, g, b), min = Math.min(r, g, b),
-        d = max - min,
-        h,
-        s = (max === 0 ? 0 : d / max),
-        v = max / 255;
+  if (arguments.length === 1) {
+    g = r.g, b = r.b, r = r.r;
+  }
+  var max = Math.max(r, g, b), min = Math.min(r, g, b),
+    d = max - min,
+    h,
+    s = (max === 0 ? 0 : d / max),
+    v = max / 255;
 
-    switch (max) {
-        case min: h = 0; break;
-        case r: h = (g - b) + d * (g < b ? 6: 0); h /= 6 * d; break;
-        case g: h = (b - r) + d * 2; h /= 6 * d; break;
-        case b: h = (r - g) + d * 4; h /= 6 * d; break;
-    }
+  switch (max) {
+    case min: h = 0; break;
+    case r: h = (g - b) + d * (g < b ? 6 : 0); h /= 6 * d; break;
+    case g: h = (b - r) + d * 2; h /= 6 * d; break;
+    case b: h = (r - g) + d * 4; h /= 6 * d; break;
+  }
 
-    return {
-        h: h,
-        s: s,
-        v: v
-    };
+  return {
+    h: h,
+    s: s,
+    v: v
+  };
 }
 
 function pointerPrototype() {
@@ -1529,8 +1568,8 @@ function multipleSplats(amount) {
     color.b *= 10.0;
     const x = Math.random();
     const y = Math.random();
-    const dx = 1000 * (Math.random() - 0.5);
-    const dy = 1000 * (Math.random() - 0.5);
+    const dx = 1000 * (Math.random() - 0.5) * splatVelocity;
+    const dy = 1000 * (Math.random() - 0.5) * splatVelocity;
     splat(x, y, dx, dy, color);
   }
 }
@@ -1679,37 +1718,37 @@ function correctDeltaY(delta) {
 
 function generateColor() {
   let c;
-  let [colorLeft,colorRight]=colorRange;
+  let [colorLeft, colorRight] = colorRange;
   try {
-    if(colorConfig!==null){
-        const probabilityTotal=colorConfig.reduce((sum,c)=>sum+c[0],0);
-        let rand=Math.random()*probabilityTotal;
-        for(const c of colorConfig){
-        rand-=c[0];
-        if(rand<0){
-            colorLeft=c[1];
-            colorRight=c[2];
-            break;
+    if (colorConfig !== null) {
+      const probabilityTotal = colorConfig.reduce((sum, c) => sum + c[0], 0);
+      let rand = Math.random() * probabilityTotal;
+      for (const c of colorConfig) {
+        rand -= c[0];
+        if (rand < 0) {
+          colorLeft = c[1];
+          colorRight = c[2];
+          break;
         }
-        }
+      }
     }
-    let l=RGBtoHSV(hexToRgb(colorLeft)),r=RGBtoHSV(hexToRgb(colorRight)),x;
-    if(r.s<l.s){
-    x=r.s; r.s=l.s; l.s=x;
+    let l = RGBtoHSV(hexToRgb(colorLeft)), r = RGBtoHSV(hexToRgb(colorRight)), x;
+    if (r.s < l.s) {
+      x = r.s; r.s = l.s; l.s = x;
     }
-    if(r.v<l.v){
-    x=r.v; r.v=l.v; l.v=x;
+    if (r.v < l.v) {
+      x = r.v; r.v = l.v; l.v = x;
     }
-    if(r.h<l.h){
-    r.h+=1;
+    if (r.h < l.h) {
+      r.h += 1;
     }
-    x=Math.random()*(r.h-l.h)+l.h;
-    if(x>1){
-    x-=1;
+    x = Math.random() * (r.h - l.h) + l.h;
+    if (x > 1) {
+      x -= 1;
     }
-    c=HSVtoRGB(x,Math.random()*(r.s-l.s)+l.s,(Math.random()*(r.v-l.v)+l.v)*0.15);
+    c = HSVtoRGB(x, Math.random() * (r.s - l.s) + l.s, (Math.random() * (r.v - l.v) + l.v) * 0.15);
   } catch (error) {
-    console.log("Invalid color config",error);
+    console.log("Invalid color config", error);
     c = hexToRgb("#000000");
   }
   return c;

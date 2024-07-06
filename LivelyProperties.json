@@ -34,7 +34,6 @@
   "densityDiffusion": {
     "max": 40,
     "min": 0,
-    "tick": 41,
     "text": "Density Diffusion",
     "type": "slider",
     "value": 10
@@ -42,7 +41,6 @@
   "velocityDiffusion": {
     "max": 400,
     "min": 0,
-    "tick": 401,
     "text": "Velocity Diffusion",
     "type": "slider",
     "value": 100
@@ -50,7 +48,6 @@
   "pressure": {
     "max": 100,
     "min": 0,
-    "tick": 101,
     "text": "Pressure",
     "type": "slider",
     "value": 10
@@ -58,18 +55,33 @@
   "vorticity": {
     "max": 50,
     "min": 0,
-    "tick": 51,
     "text": "Vorticity",
     "type": "slider",
     "value": 20
   },
   "splatRadius": {
-    "max": 100,
+    "max": 150,
     "min": 1,
-    "tick": 100,
     "text": "Splat Radius",
     "type": "slider",
     "value": 20
+  },
+  "splatRadiusModulationEnabled": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Size Scaling"
+  },
+  "splatCircleEnabled": {
+    "type": "checkbox",
+    "value": false,
+    "text": "Splat Circle"
+  },
+  "splatVelocity": {
+    "max": 60,
+    "min": 0,
+    "text": "Splat Velocity",
+    "type": "slider",
+    "value": 10
   },
   "colorLeft": {
     "text": "color left",
@@ -80,6 +92,11 @@
     "text": "color right",
     "type": "color",
     "value": "#FF0001"
+  },
+  "colorConfig2": {
+    "text": "color (advanced config)",
+    "type": "textbox",
+    "value": "",
   },
   "shading": {
     "type": "checkbox",
@@ -99,7 +116,6 @@
   "bloomIntensity": {
     "max": 200,
     "min": 10,
-    "tick": 191,
     "text": "Bloom Intensity",
     "type": "slider",
     "value": 15
@@ -107,7 +123,6 @@
   "bloomThreshold": {
     "max": 100,
     "min": 0,
-    "tick": 101,
     "text": "Bloom Threshold",
     "type": "slider",
     "value": 75
@@ -120,7 +135,6 @@
   "sunRaysWeight": {
     "max": 100,
     "min": 30,
-    "tick": 71,
     "text": "Sunray Weight",
     "type": "slider",
     "value": 40
@@ -133,13 +147,25 @@
   "imgSelect": {
     "type": "folderDropdown",
     "value": "pexels-neosiam-601798.jpg",
-    "text": "Image",
+    "text": "Image Background",
     "filter": "*.jpg|*.png",
     "folder": "wallpapers"
   },
   "bgImgChk": {
     "type": "checkbox",
     "value": false,
-    "text": "Background"
+    "text": "Background Enabled"
   },
+  "imgOverlay": {
+    "type": "folderDropdown",
+    "value": "",
+    "text": "Image Overlay",
+    "filter": "*.jpg|*.png",
+    "folder": "wallpapers"
+  },
+  "removeOverlay": {
+    "text": "Remove Overlay",
+    "type": "button",
+    "value": "Remove"
+  }
 }
